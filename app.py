@@ -1,10 +1,13 @@
 import os
+import io
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 app = Flask(__name__)
 app.secret_key = 'matrixstore_gizli_anahtar'
@@ -14,32 +17,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-
-# --- E-POSTA (SMTP) AYARLARI ---
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
-SENDER_EMAIL = os.environ.get('MAIL_USERNAME', '') 
-SENDER_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
-
-def send_email(to_email, subject, body):
-    if not SENDER_EMAIL or not SENDER_PASSWORD:
-        print("E-posta ayarları yapılmadığı için mail gönderimi atlandı.")
-        return
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = to_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'html'))
-
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=5)
-        server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        print(f"E-posta başarıyla gönderildi: {to_email}")
-    except Exception as e:
-        print(f"E-posta gönderim hatası (sistem çalışmaya devam ediyor): {e}")
 
 # --- VERİTABANI MODELLERİ ---
 class User(db.Model):
@@ -55,6 +32,20 @@ class Product(db.Model):
     stock = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(50), nullable=False, default="Genel")
     image_url = db.Column(db.String(300), nullable=True)
+    reviews = db.relationship('Review', backref='product', lazy=True)
+
+    @property
+    def average_rating(self):
+        if not self.reviews:
+            return 0
+        return round(sum(r.rating for r in self.reviews) / len(self.reviews), 1)
+
+class Review(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    user_name = db.Column(db.String(100), nullable=False)
+    rating = db.Column(db.Integer, nullable=False) # 1 - 5 Yıldız
+    comment = db.Column(db.Text, nullable=False)
 
 class Coupon(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -87,17 +78,41 @@ def home():
         session['cart'] = []
     
     selected_category = request.args.get('category')
-    if selected_category:
-        products = Product.query.filter_by(category=selected_category).all()
-    else:
-        products = Product.query.all()
-        
-    categories = db.session.query(Product.category).distinct().all()
-    categories = [c[0] for c in categories]
+    search_query = request.args.get('q')
     
+    query = Product.query
+    if selected_category:
+        query = query.filter_by(category=selected_category)
+    if search_query:
+        query = query.filter(Product.name.contains(search_query))
+        
+    products = query.all()
+    categories = [c[0] for c in db.session.query(Product.category).distinct().all()]
     cart_count = len(session['cart'])
     user_name = session.get('user_name')
-    return render_template('index.html', products=products, categories=categories, cart_count=cart_count, selected_category=selected_category, user_name=user_name)
+    
+    return render_template('index.html', products=products, categories=categories, cart_count=cart_count, selected_category=selected_category, user_name=user_name, search_query=search_query)
+
+@app.route('/product/<int:product_id>')
+def product_detail(product_id):
+    product = Product.query.get_or_404(product_id)
+    return render_template('product_detail.html', product=product)
+
+@app.route('/add_review/<int:product_id>', methods=['POST'])
+def add_review(product_id):
+    if 'user_name' not in session:
+        flash("Yorum yapabilmek için giriş yapmalısınız!", "error")
+        return redirect(url_for('login'))
+        
+    rating = int(request.form.get('rating'))
+    comment = request.form.get('comment')
+    
+    new_rev = Review(product_id=product_id, user_name=session['user_name'], rating=rating, comment=comment)
+    db.session.add(new_rev)
+    db.session.commit()
+    
+    flash("Yorumunuz başarıyla eklendi!", "success")
+    return redirect(url_for('product_detail', product_id=product_id))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -106,8 +121,7 @@ def register():
         email = request.form.get('email')
         password = request.form.get('password')
         
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
+        if User.query.filter_by(email=email).first():
             flash("Bu e-posta adresi zaten kayıtlı!", "error")
             return redirect(url_for('register'))
             
@@ -118,7 +132,6 @@ def register():
         
         flash("Kayıt başarılı! Şimdi giriş yapabilirsiniz.", "success")
         return redirect(url_for('login'))
-        
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -126,7 +139,6 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password_hash, password):
             session['user_id'] = user.id
@@ -136,14 +148,11 @@ def login():
             return redirect(url_for('home'))
         else:
             flash("E-posta veya şifre hatalı!", "error")
-            
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
-    session.pop('user_id', None)
-    session.pop('user_name', None)
-    session.pop('user_email', None)
+    session.clear()
     return redirect(url_for('home'))
 
 @app.route('/add_to_cart/<int:product_id>')
@@ -152,7 +161,6 @@ def add_to_cart(product_id):
     if product.stock > 0:
         product.stock -= 1
         db.session.commit()
-        
         cart = session.get('cart', [])
         cart.append({"id": product.id, "name": product.name, "price": product.price, "image_url": product.image_url})
         session['cart'] = cart
@@ -195,7 +203,6 @@ def checkout():
         full_name = request.form.get('full_name')
         address = request.form.get('address')
         phone = request.form.get('phone')
-        
         items_summary = ", ".join([item['name'] for item in cart])
         
         new_order = Order(
@@ -208,18 +215,6 @@ def checkout():
         )
         db.session.add(new_order)
         db.session.commit()
-        
-        # Müşteriye E-posta Gönderimi (Hata verirse uygulamayı durdurmaz)
-        user_email = session.get('user_email')
-        if user_email:
-            email_html = f"""
-            <h2>Sayın {full_name}, Siparişiniz Alındı! 🎉</h2>
-            <p>MatrixStore'dan verdiğiniz sipariş başarıyla sistemimize ulaştı.</p>
-            <p><strong>Sipariş Özeti:</strong> {items_summary}</p>
-            <p><strong>Toplam Tutar:</strong> {total_price} TL</p>
-            <p><strong>Teslimat Adresi:</strong> {address}</p>
-            """
-            send_email(user_email, "MatrixStore - Sipariş Onayı", email_html)
 
         session.pop('cart', None)
         session.pop('discount', None)
@@ -235,6 +230,43 @@ def my_orders():
         return redirect(url_for('login'))
     orders = Order.query.filter_by(user_id=session['user_id']).order_by(Order.id.desc()).all()
     return render_template('my_orders.html', orders=orders)
+
+@app.route('/download_invoice/<int:order_id>')
+def download_invoice(order_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    order = Order.query.get_or_404(order_id)
+    if order.user_id != session['user_id']:
+        return "Yetkisiz erişim", 403
+        
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    
+    # PDF İçeriği
+    p.setFont("Helvetica-Bold", 20)
+    p.drawString(100, 750, "MATRIXSTORE RESMI SIPARIS FATURASI")
+    p.line(100, 740, 500, 740)
+    
+    p.setFont("Helvetica", 12)
+    p.drawString(100, 700, f"Siparis No: #{order.id}")
+    p.drawString(100, 680, f"Musteri Ad Soyad: {order.full_name}")
+    p.drawString(100, 660, f"Telefon: {order.phone}")
+    p.drawString(100, 640, f"Adres: {order.address}")
+    p.drawString(100, 610, f"Urunler: {order.items_summary}")
+    
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(100, 560, f"Toplam Tutar: {order.total_price} TL")
+    p.drawString(100, 540, f"Siparis Durumu: {order.status}")
+    
+    p.setFont("Helvetica-Oblique", 10)
+    p.drawString(100, 480, "Bizi tercih ettiginiz icin tesekkur ederiz!")
+    
+    p.showPage()
+    p.save()
+    
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name=f"Fatura_MatrixStore_Siparis_{order.id}.pdf", mimetype='application/pdf')
 
 @app.route('/clear_cart')
 def clear_cart():
@@ -262,10 +294,16 @@ def admin_login():
 def admin_panel():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
+        
     products = Product.query.all()
     coupons = Coupon.query.all()
     orders = Order.query.order_by(Order.id.desc()).all()
-    return render_template('admin.html', products=products, coupons=coupons, orders=orders)
+    
+    # İSTATİSTİKLER (Ciro & Satış Adedi)
+    total_revenue = sum(o.total_price for o in orders)
+    total_sales_count = len(orders)
+    
+    return render_template('admin.html', products=products, coupons=coupons, orders=orders, total_revenue=total_revenue, total_sales_count=total_sales_count)
 
 @app.route('/admin/update_stock/<int:product_id>', methods=['POST'])
 def update_stock(product_id):
@@ -312,15 +350,6 @@ def update_order(order_id):
     order = Order.query.get_or_404(order_id)
     order.status = status
     db.session.commit()
-    
-    user = User.query.get(order.user_id)
-    if user:
-        email_html = f"""
-        <h2>Sayın {order.full_name}, Siparişinizin Durumu Güncellendi! 🚚</h2>
-        <p>#{order.id} numaralı siparişinizin yeni durumu: <strong>{status}</strong></p>
-        """
-        send_email(user.email, f"MatrixStore - Sipariş #{order.id} Güncellemesi", email_html)
-        
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/logout')

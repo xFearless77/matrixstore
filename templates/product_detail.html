@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ product.name }} - MatrixStore</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; padding: 30px; }
+        .container { display: flex; gap: 40px; background: #1f1f1f; padding: 30px; border-radius: 8px; border: 1px solid #00ff66; }
+        img { width: 300px; height: 300px; object-fit: cover; border-radius: 8px; }
+        .details { flex: 1; }
+        .btn { display: inline-block; padding: 10px 20px; background: #00ff66; color: #000; text-decoration: none; font-weight: bold; border-radius: 4px; margin-top: 15px; }
+        .reviews { margin-top: 40px; }
+        .review-card { background: #1f1f1f; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 3px solid #00ff66; }
+        select, textarea { display: block; margin: 10px 0; padding: 8px; width: 100%; max-width: 400px; }
+    </style>
+</head>
+<body>
+    <a href="/" style="color: #00ff66;">← Mağazaya Dön</a>
+    <br><br>
+    <div class="container">
+        <img src="{{ product.image_url or 'https://via.placeholder.com/300' }}">
+        <div class="details">
+            <h1>{{ product.name }}</h1>
+            <p>Kategori: {{ product.category }}</p>
+            <p>Ortalama Puan: <strong>⭐ {{ product.average_rating }} / 5</strong> ({{ product.reviews|length }} yorum)</p>
+            <h2>Fiyat: {{ product.price }} TL</h2>
+            <p>Stok Durumu: {{ product.stock }} adet</p>
+            {% if product.stock > 0 %}
+                <a href="/add_to_cart/{{ product.id }}" class="btn">Sepete Ekle</a>
+            {% else %}
+                <p style="color: red;">Stok Tükendi</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="reviews">
+        <h2>💬 Müşteri Değerlendirmeleri</h2>
+        
+        <form action="/add_review/{{ product.id }}" method="POST">
+            <h3>Yorum Yap & Puan Ver</h3>
+            <label>Puanınız:</label>
+            <select name="rating">
+                <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                <option value="3">⭐⭐⭐ (3/5)</option>
+                <option value="2">⭐⭐ (2/5)</option>
+                <option value="1">⭐ (1/5)</option>
+            </select>
+            <textarea name="comment" rows="3" placeholder="Ürün hakkındaki düşünceleriniz..." required></textarea>
+            <button type="submit" class="btn" style="border:none; cursor:pointer;">Yorumu Gönder</button>
+        </form>
+
+        <br>
+        {% for rev in product.reviews %}
+            <div class="review-card">
+                <strong>{{ rev.user_name }}</strong> - ⭐ {{ rev.rating }}/5
+                <p>{{ rev.comment }}</p>
+            </div>
+        {% else %}
+            <p>Henüz yorum yapılmamış. İlk yorumu sen yap!</p>
+        {% endfor %}
+    </div>
+</body>
+</html>

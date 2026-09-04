@@ -9,6 +9,8 @@
         th, td { border: 1px solid #333; padding: 10px; text-align: left; }
         th { background: #1f1f1f; color: #00ff66; }
         .card { background: #1f1f1f; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        .stats { display: flex; gap: 20px; margin-bottom: 20px; }
+        .stat-box { background: #1f1f1f; border: 1px solid #00ff66; padding: 20px; border-radius: 8px; flex: 1; text-align: center; }
         input, select { padding: 6px; margin-right: 5px; }
         .btn { padding: 6px 12px; background: #00ff66; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 4px; }
     </style>
@@ -18,6 +20,17 @@
     <a href="/admin/logout" style="color: #ff4444;">Çıkış Yap</a> | <a href="/" style="color: #00ff66;">Mağazaya Git</a>
 
     <br><br>
+    <div class="stats">
+        <div class="stat-box">
+            <h2>💰 Toplam Ciro / Kazanç</h2>
+            <h1 style="color: #00ff66;">{{ total_revenue }} TL</h1>
+        </div>
+        <div class="stat-box">
+            <h2>📦 Toplam Satış Adedi</h2>
+            <h1 style="color: #00ff66;">{{ total_sales_count }} Sipariş</h1>
+        </div>
+    </div>
+
     <div class="card">
         <h3>📦 Gelen Siparişler & Takip</h3>
         <table>
