@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Yönetim Paneli - MatrixStore</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+        th { background: #1f1f1f; color: #00ff66; }
+        .card { background: #1f1f1f; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        input { padding: 5px; }
+        .btn { padding: 6px 12px; background: #00ff66; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🛠️ MatrixStore Yönetim Paneli</h1>
+    <a href="/admin/logout" style="color: #ff4444;">Çıkış Yap</a> | <a href="/" style="color: #00ff66;">Mağazaya Git</a>
+
+    <br><br>
+    <div class="card">
+        <h3>➕ Yeni Ürün Ekle</h3>
+        <form action="/admin/add_product" method="POST">
+            <input type="text" name="name" placeholder="Ürün Adı" required>
+            <input type="number" step="0.01" name="price" placeholder="Fiyat (TL)" required>
+            <input type="number" name="stock" placeholder="Stok Adedi" required>
+            <button type="submit" class="btn">Ürünü Ekle</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>📦 Mevcut Ürünler ve Stok Yenileme</h3>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Ürün Adı</th>
+                <th>Fiyat</th>
+                <th>Mevcut Stok</th>
+                <th>Stok Güncelle</th>
+            </tr>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.id }}</td>
+                <td>{{ product.name }}</td>
+                <td>{{ product.price }} TL</td>
+                <td><strong>{{ product.stock }}</strong></td>
+                <td>
+                    <form action="/admin/update_stock/{{ product.id }}" method="POST" style="display:inline;">
+                        <input type="number" name="stock" value="{{ product.stock }}" style="width: 60px;" required>
+                        <button type="submit" class="btn">Kaydet</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

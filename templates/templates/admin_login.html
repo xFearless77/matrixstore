@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Girişi - MatrixStore</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; text-align: center; margin-top: 100px; }
+        .login-card { background: #1f1f1f; display: inline-block; padding: 30px; border-radius: 8px; border: 1px solid #00ff66; }
+        input { display: block; margin: 10px auto; padding: 8px; width: 200px; }
+        button { padding: 10px 20px; background: #00ff66; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>Admin Girişi</h2>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <p style="color: red;">{{ messages[0] }}</p>
+            {% endif %}
+        {% endwith %}
+        <form action="/admin/login" method="POST">
+            <input type="text" name="username" placeholder="Kullanıcı Adı" required>
+            <input type="password" name="password" placeholder="Şifre" required>
+            <button type="submit">Giriş Yap</button>
+        </form>
+    </div>
+</body>
+</html>
