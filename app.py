@@ -13,15 +13,15 @@ from reportlab.pdfgen import canvas
 app = Flask(__name__)
 app.secret_key = 'matrixstore_gizli_anahtar'
 
-# Sistem geçici dizininde izin sorunu yaşamayan temiz veritabanı yolu
+# Render uyumlu temp veritabanı konumu
 db_dir = tempfile.gettempdir()
-db_path = os.path.join(db_dir, 'matrix_store_final.db')
+db_path = os.path.join(db_dir, 'store_v5.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Favoriler İlişki Tablosu (Many-to-Many)
+# Favoriler İlişki Tablosu
 favorites = db.Table('favorites',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True)
@@ -112,6 +112,8 @@ def product_detail(product_id):
         user = User.query.get(session['user_id'])
         if user and product in user.fav_products:
             is_fav = True
+        elif not user:
+            session.clear()
     return render_template('product_detail.html', product=product, is_fav=is_fav)
 
 @app.route('/toggle_favorite/<int:product_id>')
@@ -121,6 +123,11 @@ def toggle_favorite(product_id):
         return redirect(url_for('login'))
         
     user = User.query.get(session['user_id'])
+    if not user:
+        session.clear()
+        flash("Oturumunuz geçersiz, lütfen tekrar giriş yapın.", "error")
+        return redirect(url_for('login'))
+
     product = Product.query.get_or_404(product_id)
     
     if product in user.fav_products:
@@ -142,6 +149,7 @@ def favorites_page():
     user = User.query.get(session['user_id'])
     if not user:
         session.clear()
+        flash("Lütfen tekrar giriş yapın.", "error")
         return redirect(url_for('login'))
         
     return render_template('favorites.html', products=user.fav_products)
@@ -279,6 +287,30 @@ def my_orders():
     orders = Order.query.filter_by(user_id=session['user_id']).order_by(Order.id.desc()).all()
     return render_template('my_orders.html', orders=orders)
 
+@app.route('/cancel_order/<int:order_id>', methods=['POST'])
+def cancel_order(order_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    order = Order.query.get_or_404(order_id)
+    if order.user_id != session['user_id']:
+        return "Yetkisiz işlem", 403
+        
+    if order.status == "Hazırlanıyor":
+        order.status = "İptal Edildi"
+        item_names = [item.strip() for item in order.items_summary.split(',')]
+        for item_name in item_names:
+            product = Product.query.filter_by(name=item_name).first()
+            if product:
+                product.stock += 1
+                
+        db.session.commit()
+        flash("Siparişiniz başarıyla iptal edildi.", "success")
+    else:
+        flash("Kargoya verilen veya tamamlanan siparişler iptal edilemez!", "error")
+        
+    return redirect(url_for('my_orders'))
+
 @app.route('/download_invoice/<int:order_id>')
 def download_invoice(order_id):
     if 'user_id' not in session:
@@ -346,8 +378,8 @@ def admin_panel():
     coupons = Coupon.query.all()
     orders = Order.query.order_by(Order.id.desc()).all()
     
-    total_revenue = sum(o.total_price for o in orders)
-    total_sales_count = len(orders)
+    total_revenue = sum(o.total_price for o in orders if o.status != 'İptal Edildi')
+    total_sales_count = len([o for o in orders if o.status != 'İptal Edildi'])
     
     return render_template('admin.html', products=products, coupons=coupons, orders=orders, total_revenue=total_revenue, total_sales_count=total_sales_count)
 
@@ -416,29 +448,3 @@ def admin_logout():
 
 if __name__ == '__main__':
     app.run(debug=True)
-    # Müşterinin Kendi Siparişini İptal Etmesi
-@app.route('/cancel_order/<int:order_id>', methods=['POST'])
-def cancel_order(order_id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-        
-    order = Order.query.get_or_404(order_id)
-    if order.user_id != session['user_id']:
-        return "Yetkisiz işlem", 403
-        
-    if order.status == "Hazırlanıyor":
-        order.status = "Müşteri İptal Etti"
-        
-        # Stok İadesi Yap (Siparişteki ürünlerin stoğunu geri artır)
-        item_names = [item.strip() for item in order.items_summary.split(',')]
-        for item_name in item_names:
-            product = Product.query.filter_by(name=item_name).first()
-            if product:
-                product.stock += 1
-                
-        db.session.commit()
-        flash("Siparişiniz başarıyla iptal edildi ve stok iadesi yapıldı.", "success")
-    else:
-        flash("Kargoya verilen veya tamamlanan siparişler iptal edilemez!", "error")
-        
-    return redirect(url_for('my_orders'))
