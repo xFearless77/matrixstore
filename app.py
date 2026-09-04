@@ -1,9 +1,6 @@
 import os
 import io
-import smtplib
 import tempfile
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,11 +8,11 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 app = Flask(__name__)
-app.secret_key = 'matrixstore_gizli_anahtar'
+app.secret_key = 'matrixstore_gizli_anahtar_v10'
 
-# Render uyumlu temp veritabanı konumu
+# Veritabanını yepyeni ve temiz bir dosyaya bağlıyoruz
 db_dir = tempfile.gettempdir()
-db_path = os.path.join(db_dir, 'store_stable_v2.db')
+db_path = os.path.join(db_dir, 'matrix_store_v10.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -130,14 +127,17 @@ def toggle_favorite(product_id):
 
     product = Product.query.get_or_404(product_id)
     
-    if product in user.fav_products:
-        user.fav_products.remove(product)
-        flash("Ürün favorilerinizden çıkarıldı.", "success")
-    else:
-        user.fav_products.append(product)
-        flash("Ürün favorilerinize eklendi! ❤️", "success")
+    try:
+        if product in user.fav_products:
+            user.fav_products.remove(product)
+            flash("Ürün favorilerinizden çıkarıldı.", "success")
+        else:
+            user.fav_products.append(product)
+            flash("Ürün favorilerinize eklendi! ❤️", "success")
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
         
-    db.session.commit()
     return redirect(request.referrer or url_for('home'))
 
 @app.route('/favorites')
@@ -286,14 +286,18 @@ def my_orders():
         flash("Siparişlerinizi görmek için lütfen giriş yapın.", "error")
         return redirect(url_for('login'))
         
-    user = User.query.get(session['user_id'])
-    if not user:
-        session.clear()
-        flash("Oturumunuz geçersiz, lütfen tekrar giriş yapın.", "error")
-        return redirect(url_for('login'))
+    try:
+        user = User.query.get(session['user_id'])
+        if not user:
+            session.clear()
+            flash("Oturumunuz yenilendi, lütfen tekrar giriş yapın.", "error")
+            return redirect(url_for('login'))
 
-    orders = Order.query.filter_by(user_id=user.id).order_by(Order.id.desc()).all()
-    return render_template('my_orders.html', orders=orders)
+        orders = Order.query.filter_by(user_id=user.id).order_by(Order.id.desc()).all()
+        return render_template('my_orders.html', orders=orders)
+    except Exception:
+        session.clear()
+        return redirect(url_for('login'))
 
 @app.route('/cancel_order/<int:order_id>', methods=['POST'])
 def cancel_order(order_id):
@@ -382,14 +386,18 @@ def admin_panel():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
         
-    products = Product.query.all()
-    coupons = Coupon.query.all()
-    orders = Order.query.order_by(Order.id.desc()).all()
-    
-    total_revenue = sum(o.total_price for o in orders if o.status != 'İptal Edildi')
-    total_sales_count = len([o for o in orders if o.status != 'İptal Edildi'])
-    
-    return render_template('admin.html', products=products, coupons=coupons, orders=orders, total_revenue=total_revenue, total_sales_count=total_sales_count)
+    try:
+        products = Product.query.all()
+        coupons = Coupon.query.all()
+        orders = Order.query.order_by(Order.id.desc()).all()
+        
+        total_revenue = sum(o.total_price for o in orders if o.status != 'İptal Edildi')
+        total_sales_count = len([o for o in orders if o.status != 'İptal Edildi'])
+        
+        return render_template('admin.html', products=products, coupons=coupons, orders=orders, total_revenue=total_revenue, total_sales_count=total_sales_count)
+    except Exception:
+        db.session.rollback()
+        return render_template('admin.html', products=[], coupons=[], orders=[], total_revenue=0, total_sales_count=0)
 
 @app.route('/admin/add_product', methods=['POST'])
 def add_product():

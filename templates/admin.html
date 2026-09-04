@@ -102,6 +102,7 @@
                             <option value="Hazırlanıyor" {% if order.status == 'Hazırlanıyor' %}selected{% endif %}>Hazırlanıyor</option>
                             <option value="Kargoya Verildi" {% if order.status == 'Kargoya Verildi' %}selected{% endif %}>Kargoya Verildi</option>
                             <option value="Teslim Edildi" {% if order.status == 'Teslim Edildi' %}selected{% endif %}>Teslim Edildi</option>
+                            <option value="İptal Edildi" {% if order.status == 'İptal Edildi' %}selected{% endif %}>İptal Edildi</option>
                         </select>
                         <button type="submit" class="btn">Güncelle</button>
                     </form>
@@ -121,9 +122,3 @@
     </div>
 </body>
 </html>
-<select name="status">
-    <option value="Hazırlanıyor" {% if order.status == 'Hazırlanıyor' %}selected{% endif %}>Hazırlanıyor</option>
-    <option value="Kargoya Verildi" {% if order.status == 'Kargoya Verildi' %}selected{% endif %}>Kargoya Verildi</option>
-    <option value="Teslim Edildi" {% if order.status == 'Teslim Edildi' %}selected{% endif %}>Teslim Edildi</option>
-    <option value="İptal Edildi" {% if order.status == 'İptal Edildi' %}selected{% endif %}>İptal Edildi</option>
-</select>
