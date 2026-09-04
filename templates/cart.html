@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Sepetim - MatrixStore</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; text-align: center; }
+        ul { list-style: none; padding: 0; }
+        li { background: #1f1f1f; margin: 10px auto; padding: 10px; width: 300px; border-radius: 5px; }
+        .btn { display: inline-block; padding: 10px 20px; background: #00ff66; color: #000; text-decoration: none; font-weight: bold; border-radius: 5px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h1>🛒 Sepetiniz</h1>
+
+    {% if cart %}
+        <ul>
+            {% for item in cart %}
+                <li>{{ item.name }} - {{ item.price }} TL</li>
+            {% endfor %}
+        </ul>
+        <h3>Toplam Tutar: {{ total_price }} TL</h3>
+        <a href="/clear_cart" style="color: #ff4444;">Sepeti Temizle</a>
+    {% else %}
+        <p>Sepetiniz henüz boş.</p>
+    {% endif %}
+
+    <br><br>
+    <a href="/" class="btn">Mağazaya Dön</a>
+
+</body>
+</html>
