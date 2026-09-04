@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Favorilerim - MatrixStore</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; padding: 30px; }
+        .container { display: flex; flex-wrap: wrap; gap: 20px; }
+        .card { background: #1f1f1f; padding: 15px; border-radius: 8px; border: 1px solid #333; width: 220px; text-align: center; }
+        .card img { width: 100%; height: 180px; object-fit: cover; border-radius: 5px; }
+        .btn { display: inline-block; padding: 8px; background: #00ff66; color: #000; text-decoration: none; font-weight: bold; border-radius: 4px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>❤️ Favori Ürünlerim</h1>
+    <a href="/" class="btn">Mağazaya Dön</a>
+    <br><br>
+    <div class="container">
+        {% for product in products %}
+        <div class="card">
+            <img src="{{ product.image_list[0] }}">
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.price }} TL</p>
+            <a href="/product/{{ product.id }}" class="btn">İncele</a>
+            <a href="/toggle_favorite/{{ product.id }}" style="color: #ff4444; display: block; margin-top: 10px; text-decoration: none;">💔 Çıkar</a>
+        </div>
+        {% else %}
+            <p>Henüz favorilere ürün eklemediniz.</p>
+        {% endfor %}
+    </div>
+</body>
+</html>

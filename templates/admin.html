@@ -11,8 +11,9 @@
         .card { background: #1f1f1f; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
         .stats { display: flex; gap: 20px; margin-bottom: 20px; }
         .stat-box { background: #1f1f1f; border: 1px solid #00ff66; padding: 20px; border-radius: 8px; flex: 1; text-align: center; }
-        input, select { padding: 6px; margin-right: 5px; }
+        input, select { padding: 6px; margin-right: 5px; margin-bottom: 5px; }
         .btn { padding: 6px 12px; background: #00ff66; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 4px; }
+        .btn-danger { background: #ff4444; color: #fff; }
     </style>
 </head>
 <body>
@@ -22,13 +23,59 @@
     <br><br>
     <div class="stats">
         <div class="stat-box">
-            <h2>💰 Toplam Ciro / Kazanç</h2>
+            <h2>💰 Toplam Ciro</h2>
             <h1 style="color: #00ff66;">{{ total_revenue }} TL</h1>
         </div>
         <div class="stat-box">
             <h2>📦 Toplam Satış Adedi</h2>
             <h1 style="color: #00ff66;">{{ total_sales_count }} Sipariş</h1>
         </div>
+    </div>
+
+    <div class="card">
+        <h3>➕ Yeni Ürün Ekle</h3>
+        <form action="/admin/add_product" method="POST">
+            <input type="text" name="name" placeholder="Ürün Adı" required>
+            <input type="number" step="0.01" name="price" placeholder="Fiyat (TL)" required>
+            <input type="number" name="stock" placeholder="Stok Adedi" required>
+            <input type="text" name="category" placeholder="Kategori" required>
+            <br>
+            <input type="text" name="image_urls" placeholder="Resim URL'leri (Virgülle ayırın)" style="width: 400px;">
+            <input type="text" name="video_url" placeholder="YouTube Embed Video URL (Opsiyonel)" style="width: 300px;">
+            <button type="submit" class="btn">Ürünü Ekle</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>📦 Mevcut Ürün Yönetimi & Stok Yenileme / Silme</h3>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Kategori</th>
+                <th>Ürün Adı</th>
+                <th>Fiyat</th>
+                <th>Mevcut Stok</th>
+                <th>İşlemler</th>
+            </tr>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.id }}</td>
+                <td>{{ product.category }}</td>
+                <td>{{ product.name }}</td>
+                <td>{{ product.price }} TL</td>
+                <td><strong>{{ product.stock }}</strong></td>
+                <td>
+                    <form action="/admin/update_stock/{{ product.id }}" method="POST" style="display:inline;">
+                        <input type="number" name="stock" value="{{ product.stock }}" style="width: 60px;" required>
+                        <button type="submit" class="btn">Güncelle</button>
+                    </form>
+                    <form action="/admin/delete_product/{{ product.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Bu ürünü silmek istediğinize emin misiniz?');">
+                        <button type="submit" class="btn btn-danger">🗑️ Sil</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
 
     <div class="card">
@@ -65,53 +112,12 @@
     </div>
 
     <div class="card">
-        <h3>➕ Yeni Ürün Ekle</h3>
-        <form action="/admin/add_product" method="POST">
-            <input type="text" name="name" placeholder="Ürün Adı" required>
-            <input type="number" step="0.01" name="price" placeholder="Fiyat (TL)" required>
-            <input type="number" name="stock" placeholder="Stok Adedi" required>
-            <input type="text" name="category" placeholder="Kategori" required>
-            <input type="text" name="image_url" placeholder="Resim URL'si">
-            <button type="submit" class="btn">Ürünü Ekle</button>
-        </form>
-    </div>
-
-    <div class="card">
         <h3>🎟️ İndirim Kuponu Oluştur</h3>
         <form action="/admin/add_coupon" method="POST">
             <input type="text" name="code" placeholder="Kupon Kodu" required>
             <input type="number" name="discount" placeholder="İndirim Yüzdesi (%)" required>
             <button type="submit" class="btn">Kupon Oluştur</button>
         </form>
-    </div>
-
-    <div class="card">
-        <h3>📦 Stok Yenileme</h3>
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Kategori</th>
-                <th>Ürün Adı</th>
-                <th>Fiyat</th>
-                <th>Mevcut Stok</th>
-                <th>Güncelle</th>
-            </tr>
-            {% for product in products %}
-            <tr>
-                <td>{{ product.id }}</td>
-                <td>{{ product.category }}</td>
-                <td>{{ product.name }}</td>
-                <td>{{ product.price }} TL</td>
-                <td><strong>{{ product.stock }}</strong></td>
-                <td>
-                    <form action="/admin/update_stock/{{ product.id }}" method="POST" style="display:inline;">
-                        <input type="number" name="stock" value="{{ product.stock }}" style="width: 60px;" required>
-                        <button type="submit" class="btn">Kaydet</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
     </div>
 </body>
 </html>

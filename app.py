@@ -1,8 +1,5 @@
 import os
 import io
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -18,12 +15,19 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+# Favoriler için Çoktan-Çoğa ilişki tablosu
+favorites = db.Table('favorites',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True)
+)
+
 # --- VERİTABANI MODELLERİ ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
+    fav_products = db.relationship('Product', secondary=favorites, backref=db.backref('favorited_by', lazy='dynamic'))
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -31,8 +35,9 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     stock = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(50), nullable=False, default="Genel")
-    image_url = db.Column(db.String(300), nullable=True)
-    reviews = db.relationship('Review', backref='product', lazy=True)
+    image_urls = db.Column(db.Text, nullable=True) # Virgülle ayrılmış birden fazla resim URL'si
+    video_url = db.Column(db.String(300), nullable=True) # Video Embed veya MP4 URL'si
+    reviews = db.relationship('Review', backref='product', cascade="all, delete-orphan", lazy=True)
 
     @property
     def average_rating(self):
@@ -40,11 +45,17 @@ class Product(db.Model):
             return 0
         return round(sum(r.rating for r in self.reviews) / len(self.reviews), 1)
 
+    @property
+    def image_list(self):
+        if self.image_urls:
+            return [url.strip() for url in self.image_urls.split(',') if url.strip()]
+        return ['https://via.placeholder.com/300']
+
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     user_name = db.Column(db.String(100), nullable=False)
-    rating = db.Column(db.Integer, nullable=False) # 1 - 5 Yıldız
+    rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text, nullable=False)
 
 class Coupon(db.Model):
@@ -64,12 +75,6 @@ class Order(db.Model):
 
 with app.app_context():
     db.create_all()
-    if Product.query.count() == 0:
-        p1 = Product(name="Siyah Matrix Tişört", price=450.0, stock=10, category="Giyim", image_url="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=400")
-        p2 = Product(name="Cyberpunk Sweatshirt", price=850.0, stock=5, category="Giyim", image_url="https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=400")
-        p3 = Product(name="Yazılımcı Kupası", price=200.0, stock=15, category="Aksesuar", image_url="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400")
-        db.session.add_all([p1, p2, p3])
-        db.session.commit()
 
 # --- MÜŞTERİ ROTALARI ---
 @app.route('/')
@@ -96,7 +101,38 @@ def home():
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
-    return render_template('product_detail.html', product=product)
+    is_fav = False
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if user and product in user.fav_products:
+            is_fav = True
+    return render_template('product_detail.html', product=product, is_fav=is_fav)
+
+@app.route('/toggle_favorite/<int:product_id>')
+def toggle_favorite(product_id):
+    if 'user_id' not in session:
+        flash("Favorilere eklemek için lütfen önce giriş yapın!", "error")
+        return redirect(url_for('login'))
+        
+    user = User.query.get(session['user_id'])
+    product = Product.query.get_or_404(product_id)
+    
+    if product in user.fav_products:
+        user.fav_products.remove(product)
+        flash("Ürün favorilerinizden çıkarıldı.", "success")
+    else:
+        user.fav_products.append(product)
+        flash("Ürün favorilerinize eklendi! ❤️", "success")
+        
+    db.session.commit()
+    return redirect(request.referrer or url_for('home'))
+
+@app.route('/favorites')
+def favorites_page():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = User.query.get(session['user_id'])
+    return render_template('favorites.html', products=user.fav_products)
 
 @app.route('/add_review/<int:product_id>', methods=['POST'])
 def add_review(product_id):
@@ -162,7 +198,7 @@ def add_to_cart(product_id):
         product.stock -= 1
         db.session.commit()
         cart = session.get('cart', [])
-        cart.append({"id": product.id, "name": product.name, "price": product.price, "image_url": product.image_url})
+        cart.append({"id": product.id, "name": product.name, "price": product.price, "image_url": product.image_list[0]})
         session['cart'] = cart
     return redirect(url_for('home'))
 
@@ -243,7 +279,6 @@ def download_invoice(order_id):
     buffer = io.BytesIO()
     p = canvas.Canvas(buffer, pagesize=letter)
     
-    # PDF İçeriği
     p.setFont("Helvetica-Bold", 20)
     p.drawString(100, 750, "MATRIXSTORE RESMI SIPARIS FATURASI")
     p.line(100, 740, 500, 740)
@@ -299,21 +334,10 @@ def admin_panel():
     coupons = Coupon.query.all()
     orders = Order.query.order_by(Order.id.desc()).all()
     
-    # İSTATİSTİKLER (Ciro & Satış Adedi)
     total_revenue = sum(o.total_price for o in orders)
     total_sales_count = len(orders)
     
     return render_template('admin.html', products=products, coupons=coupons, orders=orders, total_revenue=total_revenue, total_sales_count=total_sales_count)
-
-@app.route('/admin/update_stock/<int:product_id>', methods=['POST'])
-def update_stock(product_id):
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    new_stock = int(request.form.get('stock'))
-    product = Product.query.get_or_404(product_id)
-    product.stock = new_stock
-    db.session.commit()
-    return redirect(url_for('admin_panel'))
 
 @app.route('/admin/add_product', methods=['POST'])
 def add_product():
@@ -323,10 +347,31 @@ def add_product():
     price = float(request.form.get('price'))
     stock = int(request.form.get('stock'))
     category = request.form.get('category')
-    image_url = request.form.get('image_url')
+    image_urls = request.form.get('image_urls')
+    video_url = request.form.get('video_url')
     
-    new_p = Product(name=name, price=price, stock=stock, category=category, image_url=image_url)
+    new_p = Product(name=name, price=price, stock=stock, category=category, image_urls=image_urls, video_url=video_url)
     db.session.add(new_p)
+    db.session.commit()
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/delete_product/<int:product_id>', methods=['POST'])
+def delete_product(product_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    product = Product.query.get_or_404(product_id)
+    db.session.delete(product)
+    db.session.commit()
+    flash("Ürün silindi!", "success")
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/update_stock/<int:product_id>', methods=['POST'])
+def update_stock(product_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    new_stock = int(request.form.get('stock'))
+    product = Product.query.get_or_404(product_id)
+    product.stock = new_stock
     db.session.commit()
     return redirect(url_for('admin_panel'))
 
