@@ -1,4 +1,7 @@
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,6 +14,30 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
+# --- E-POSTA (SMTP) AYARLARI ---
+# Kendi Gmail adresini ve Google Hesabı -> Güvenlik -> Uygulama Şifreleri (App Password) kısmından aldığın 16 haneli şifreyi yazabilirsin.
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+SENDER_EMAIL = os.environ.get('MAIL_USERNAME', 'ornek@gmail.com')  # Render Environment Variable veya buraya yazılacak mail
+SENDER_PASSWORD = os.environ.get('MAIL_PASSWORD', 'uygulama_sifresi') # 16 haneli Google Uygulama Şifresi
+
+def send_email(to_email, subject, body):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'html'))
+
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        print(f"E-posta başarıyla gönderildi: {to_email}")
+    except Exception as e:
+        print(f"E-posta gönderim hatası: {e}")
 
 # --- VERİTABANI MODELLERİ ---
 class User(db.Model):
@@ -39,8 +66,8 @@ class Order(db.Model):
     address = db.Column(db.Text, nullable=False)
     phone = db.Column(db.String(20), nullable=False)
     total_price = db.Column(db.Float, nullable=False)
-    items_summary = db.Column(db.Text, nullable=False) # Örn: "2x Tişört, 1x Kupa"
-    status = db.Column(db.String(50), default="Hazırlanıyor") # Hazırlanıyor, Kargoda, Teslim Edildi
+    items_summary = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(50), default="Hazırlanıyor")
 
 with app.app_context():
     db.create_all()
@@ -102,6 +129,7 @@ def login():
         if user and check_password_hash(user.password_hash, password):
             session['user_id'] = user.id
             session['user_name'] = user.name
+            session['user_email'] = user.email
             flash(f"Hoş geldin, {user.name}!", "success")
             return redirect(url_for('home'))
         else:
@@ -113,6 +141,7 @@ def login():
 def logout():
     session.pop('user_id', None)
     session.pop('user_name', None)
+    session.pop('user_email', None)
     return redirect(url_for('home'))
 
 @app.route('/add_to_cart/<int:product_id>')
@@ -178,11 +207,25 @@ def checkout():
         db.session.add(new_order)
         db.session.commit()
         
+        # Müşteriye E-posta Gönder
+        user_email = session.get('user_email')
+        if user_email:
+            email_html = f"""
+            <h2>Sayın {full_name}, Siparişiniz Alındı! 🎉</h2>
+            <p>MatrixStore'dan verdiğiniz sipariş başarıyla sistemimize ulaştı.</p>
+            <p><strong>Sipariş Özeti:</strong> {items_summary}</p>
+            <p><strong>Toplam Tutar:</strong> {total_price} TL</p>
+            <p><strong>Teslimat Adresi:</strong> {address}</p>
+            <br>
+            <p>Teşekkür ederiz,<br><strong>MatrixStore Ekibi</strong></p>
+            """
+            send_email(user_email, "MatrixStore - Sipariş Onayı", email_html)
+
         # Sepeti ve indirimi temizle
         session.pop('cart', None)
         session.pop('discount', None)
         
-        flash("Siparişiniz başarıyla alındı! Teşekkür ederiz.", "success")
+        flash("Siparişiniz başarıyla alındı! Bilgilendirme e-postası gönderildi.", "success")
         return redirect(url_for('my_orders'))
         
     return render_template('checkout.html', total_price=total_price)
@@ -270,6 +313,17 @@ def update_order(order_id):
     order = Order.query.get_or_404(order_id)
     order.status = status
     db.session.commit()
+    
+    # Kargo Durumu Değişince Müşteriye Mail Gönder
+    user = User.query.get(order.user_id)
+    if user:
+        email_html = f"""
+        <h2>Sayın {order.full_name}, Siparişinizin Durumu Güncellendi! 🚚</h2>
+        <p>#{order.id} numaralı siparişinizin yeni durumu: <strong>{status}</strong></p>
+        <p>Bizi tercih ettiğiniz için teşekkür ederiz!</p>
+        """
+        send_email(user.email, f"MatrixStore - Sipariş #{order.id} Güncellemesi", email_html)
+        
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/logout')
