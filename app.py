@@ -74,7 +74,7 @@ class Order(db.Model):
     status = db.Column(db.String(50), default="Hazırlanıyor")
 
 with app.app_context():
-    db.create_all()
+    db.create_all()  # Eksik kalan tabloları (favorites dahil) otomatik oluşturur
 
 # --- MÜŞTERİ ROTALARI ---
 @app.route('/')
