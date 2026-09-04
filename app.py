@@ -416,3 +416,29 @@ def admin_logout():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    # Müşterinin Kendi Siparişini İptal Etmesi
+@app.route('/cancel_order/<int:order_id>', methods=['POST'])
+def cancel_order(order_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    order = Order.query.get_or_404(order_id)
+    if order.user_id != session['user_id']:
+        return "Yetkisiz işlem", 403
+        
+    if order.status == "Hazırlanıyor":
+        order.status = "Müşteri İptal Etti"
+        
+        # Stok İadesi Yap (Siparişteki ürünlerin stoğunu geri artır)
+        item_names = [item.strip() for item in order.items_summary.split(',')]
+        for item_name in item_names:
+            product = Product.query.filter_by(name=item_name).first()
+            if product:
+                product.stock += 1
+                
+        db.session.commit()
+        flash("Siparişiniz başarıyla iptal edildi ve stok iadesi yapıldı.", "success")
+    else:
+        flash("Kargoya verilen veya tamamlanan siparişler iptal edilemez!", "error")
+        
+    return redirect(url_for('my_orders'))

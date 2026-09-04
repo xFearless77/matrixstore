@@ -30,3 +30,17 @@
     {% endif %}
 </body>
 </html>
+<div class="order-card">
+    <h3>Sipariş #{{ order.id }}</h3>
+    <p><strong>Ürünler:</strong> {{ order.items_summary }}</p>
+    <p><strong>Tutar:</strong> {{ order.total_price }} TL</p>
+    <p><strong>Sipariş Durumu:</strong> <span class="status">{{ order.status }}</span></p>
+    
+    {% if order.status == 'Hazırlanıyor' %}
+        <form action="/cancel_order/{{ order.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Siparişi iptal etmek istediğinize emin misiniz?');">
+            <button type="submit" class="btn" style="background:#ff4444; color:#fff; border:none; cursor:pointer;">❌ Siparişi İptal Et</button>
+        </form>
+    {% endif %}
+    
+    <a href="/download_invoice/{{ order.id }}" class="btn" style="background: #333; color: #00ff66; border: 1px solid #00ff66;">📄 Faturayı İndir (PDF)</a>
+</div>
