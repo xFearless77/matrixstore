@@ -1,5 +1,8 @@
 import os
 import io
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -9,13 +12,14 @@ from reportlab.pdfgen import canvas
 app = Flask(__name__)
 app.secret_key = 'matrixstore_gizli_anahtar'
 
-db_path = os.path.join('/tmp', 'store.db')
+# Veritabanı adını v3 yaparak temiz ve eksiksiz tablolarla başlatıyoruz
+db_path = os.path.join('/tmp', 'store_v3.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Favoriler için Çoktan-Çoğa ilişki tablosu
+# Favoriler İlişki Tablosu
 favorites = db.Table('favorites',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True)
@@ -30,13 +34,13 @@ class User(db.Model):
     fav_products = db.relationship('Product', secondary=favorites, backref=db.backref('favorited_by', lazy='dynamic'))
 
 class Product(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_primary_key=True) if False else db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
     stock = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(50), nullable=False, default="Genel")
-    image_urls = db.Column(db.Text, nullable=True) # Virgülle ayrılmış birden fazla resim URL'si
-    video_url = db.Column(db.String(300), nullable=True) # Video Embed veya MP4 URL'si
+    image_urls = db.Column(db.Text, nullable=True)
+    video_url = db.Column(db.String(300), nullable=True)
     reviews = db.relationship('Review', backref='product', cascade="all, delete-orphan", lazy=True)
 
     @property
@@ -74,7 +78,7 @@ class Order(db.Model):
     status = db.Column(db.String(50), default="Hazırlanıyor")
 
 with app.app_context():
-    db.create_all()  # Eksik kalan tabloları (favorites dahil) otomatik oluşturur
+    db.create_all()
 
 # --- MÜŞTERİ ROTALARI ---
 @app.route('/')
@@ -130,8 +134,14 @@ def toggle_favorite(product_id):
 @app.route('/favorites')
 def favorites_page():
     if 'user_id' not in session:
+        flash("Favorilerinizi görmek için lütfen giriş yapın.", "error")
         return redirect(url_for('login'))
+        
     user = User.query.get(session['user_id'])
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
+        
     return render_template('favorites.html', products=user.fav_products)
 
 @app.route('/add_review/<int:product_id>', methods=['POST'])
