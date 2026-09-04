@@ -15,7 +15,7 @@ app.secret_key = 'matrixstore_gizli_anahtar'
 
 # Render uyumlu temp veritabanı konumu
 db_dir = tempfile.gettempdir()
-db_path = os.path.join(db_dir, 'store_v5.db')
+db_path = os.path.join(db_dir, 'store_stable_v2.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
