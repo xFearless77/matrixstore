@@ -16,13 +16,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # --- E-POSTA (SMTP) AYARLARI ---
-# Kendi Gmail adresini ve Google Hesabı -> Güvenlik -> Uygulama Şifreleri (App Password) kısmından aldığın 16 haneli şifreyi yazabilirsin.
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SENDER_EMAIL = os.environ.get('MAIL_USERNAME', 'ornek@gmail.com')  # Render Environment Variable veya buraya yazılacak mail
-SENDER_PASSWORD = os.environ.get('MAIL_PASSWORD', 'uygulama_sifresi') # 16 haneli Google Uygulama Şifresi
+SENDER_EMAIL = os.environ.get('MAIL_USERNAME', '') 
+SENDER_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
 
 def send_email(to_email, subject, body):
+    if not SENDER_EMAIL or not SENDER_PASSWORD:
+        print("E-posta ayarları yapılmadığı için mail gönderimi atlandı.")
+        return
     try:
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
@@ -30,14 +32,14 @@ def send_email(to_email, subject, body):
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'html'))
 
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=5)
         server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         server.send_message(msg)
         server.quit()
         print(f"E-posta başarıyla gönderildi: {to_email}")
     except Exception as e:
-        print(f"E-posta gönderim hatası: {e}")
+        print(f"E-posta gönderim hatası (sistem çalışmaya devam ediyor): {e}")
 
 # --- VERİTABANI MODELLERİ ---
 class User(db.Model):
@@ -207,7 +209,7 @@ def checkout():
         db.session.add(new_order)
         db.session.commit()
         
-        # Müşteriye E-posta Gönder
+        # Müşteriye E-posta Gönderimi (Hata verirse uygulamayı durdurmaz)
         user_email = session.get('user_email')
         if user_email:
             email_html = f"""
@@ -216,16 +218,13 @@ def checkout():
             <p><strong>Sipariş Özeti:</strong> {items_summary}</p>
             <p><strong>Toplam Tutar:</strong> {total_price} TL</p>
             <p><strong>Teslimat Adresi:</strong> {address}</p>
-            <br>
-            <p>Teşekkür ederiz,<br><strong>MatrixStore Ekibi</strong></p>
             """
             send_email(user_email, "MatrixStore - Sipariş Onayı", email_html)
 
-        # Sepeti ve indirimi temizle
         session.pop('cart', None)
         session.pop('discount', None)
         
-        flash("Siparişiniz başarıyla alındı! Bilgilendirme e-postası gönderildi.", "success")
+        flash("Siparişiniz başarıyla alındı! Teşekkür ederiz.", "success")
         return redirect(url_for('my_orders'))
         
     return render_template('checkout.html', total_price=total_price)
@@ -314,13 +313,11 @@ def update_order(order_id):
     order.status = status
     db.session.commit()
     
-    # Kargo Durumu Değişince Müşteriye Mail Gönder
     user = User.query.get(order.user_id)
     if user:
         email_html = f"""
         <h2>Sayın {order.full_name}, Siparişinizin Durumu Güncellendi! 🚚</h2>
         <p>#{order.id} numaralı siparişinizin yeni durumu: <strong>{status}</strong></p>
-        <p>Bizi tercih ettiğiniz için teşekkür ederiz!</p>
         """
         send_email(user.email, f"MatrixStore - Sipariş #{order.id} Güncellemesi", email_html)
         
