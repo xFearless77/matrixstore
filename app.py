@@ -283,8 +283,16 @@ def checkout():
 @app.route('/my_orders')
 def my_orders():
     if 'user_id' not in session:
+        flash("Siparişlerinizi görmek için lütfen giriş yapın.", "error")
         return redirect(url_for('login'))
-    orders = Order.query.filter_by(user_id=session['user_id']).order_by(Order.id.desc()).all()
+        
+    user = User.query.get(session['user_id'])
+    if not user:
+        session.clear()
+        flash("Oturumunuz geçersiz, lütfen tekrar giriş yapın.", "error")
+        return redirect(url_for('login'))
+
+    orders = Order.query.filter_by(user_id=user.id).order_by(Order.id.desc()).all()
     return render_template('my_orders.html', orders=orders)
 
 @app.route('/cancel_order/<int:order_id>', methods=['POST'])
@@ -305,7 +313,7 @@ def cancel_order(order_id):
                 product.stock += 1
                 
         db.session.commit()
-        flash("Siparişiniz başarıyla iptal edildi.", "success")
+        flash("Siparişiniz başarıyla iptal edildi ve stok iadesi yapıldı.", "success")
     else:
         flash("Kargoya verilen veya tamamlanan siparişler iptal edilemez!", "error")
         
