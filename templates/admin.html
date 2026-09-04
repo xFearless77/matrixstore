@@ -9,7 +9,7 @@
         th, td { border: 1px solid #333; padding: 10px; text-align: left; }
         th { background: #1f1f1f; color: #00ff66; }
         .card { background: #1f1f1f; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
-        input { padding: 5px; }
+        input { padding: 6px; margin-right: 5px; }
         .btn { padding: 6px 12px; background: #00ff66; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 4px; }
     </style>
 </head>
@@ -24,8 +24,26 @@
             <input type="text" name="name" placeholder="Ürün Adı" required>
             <input type="number" step="0.01" name="price" placeholder="Fiyat (TL)" required>
             <input type="number" name="stock" placeholder="Stok Adedi" required>
+            <input type="text" name="category" placeholder="Kategori (Örn: Giyim)" required>
+            <input type="text" name="image_url" placeholder="Resim URL'si">
             <button type="submit" class="btn">Ürünü Ekle</button>
         </form>
+    </div>
+
+    <div class="card">
+        <h3>🎟️ İndirim Kuponu Oluştur</h3>
+        <form action="/admin/add_coupon" method="POST">
+            <input type="text" name="code" placeholder="Kupon Kodu (Örn: MERT10)" required>
+            <input type="number" name="discount" placeholder="İndirim Yüzdesi (%)" required>
+            <button type="submit" class="btn">Kupon Oluştur</button>
+        </form>
+        <br>
+        <strong>Mevcut Kuponlar:</strong>
+        <ul>
+            {% for coupon in coupons %}
+                <li>Code: <strong>{{ coupon.code }}</strong> - İndirim: %{{ coupon.discount_percent }}</li>
+            {% endfor %}
+        </ul>
     </div>
 
     <div class="card">
@@ -33,6 +51,7 @@
         <table>
             <tr>
                 <th>ID</th>
+                <th>Kategori</th>
                 <th>Ürün Adı</th>
                 <th>Fiyat</th>
                 <th>Mevcut Stok</th>
@@ -41,6 +60,7 @@
             {% for product in products %}
             <tr>
                 <td>{{ product.id }}</td>
+                <td>{{ product.category }}</td>
                 <td>{{ product.name }}</td>
                 <td>{{ product.price }} TL</td>
                 <td><strong>{{ product.stock }}</strong></td>

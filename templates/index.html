@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <title>MatrixStore</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #121212; color: #fff; text-align: center; }
-        .header { display: flex; justify-content: space-between; padding: 20px 50px; background: #1f1f1f; }
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; background: #1f1f1f; border-bottom: 1px solid #00ff66; }
         .cart-btn { color: #00ff66; text-decoration: none; font-weight: bold; font-size: 18px; }
-        .container { display: flex; justify-content: center; gap: 20px; margin-top: 40px; }
-        .card { background: #1f1f1f; padding: 20px; border-radius: 8px; border: 1px solid #00ff66; width: 200px; }
-        .btn { display: inline-block; padding: 10px; background: #00ff66; color: #000; text-decoration: none; font-weight: bold; margin-top: 10px; border-radius: 5px; }
+        .categories { text-align: center; margin: 20px 0; }
+        .cat-btn { padding: 8px 16px; margin: 0 5px; background: #333; color: #fff; text-decoration: none; border-radius: 20px; }
+        .cat-btn.active { background: #00ff66; color: #000; font-weight: bold; }
+        .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
+        .card { background: #1f1f1f; padding: 15px; border-radius: 8px; border: 1px solid #333; width: 220px; text-align: center; }
+        .card img { width: 100%; height: 180px; object-fit: cover; border-radius: 5px; }
+        .btn { display: inline-block; padding: 10px; background: #00ff66; color: #000; text-decoration: none; font-weight: bold; margin-top: 10px; border-radius: 5px; width: 80%; }
         .disabled { background: #555; color: #888; pointer-events: none; }
     </style>
 </head>
@@ -20,12 +24,20 @@
         <a href="/cart" class="cart-btn">🛒 Sepetim ({{ cart_count }})</a>
     </div>
 
-    <h2>Ürünler</h2>
+    <div class="categories">
+        <a href="/" class="cat-btn {% if not selected_category %}active{% endif %}">Tümü</a>
+        {% for cat in categories %}
+            <a href="/?category={{ cat }}" class="cat-btn {% if selected_category == cat %}active{% endif %}">{{ cat }}</a>
+        {% endfor %}
+    </div>
+
     <div class="container">
         {% for product in products %}
         <div class="card">
+            <img src="{{ product.image_url or 'https://via.placeholder.com/200' }}" alt="{{ product.name }}">
             <h3>{{ product.name }}</h3>
-            <p>Fiyat: {{ product.price }} TL</p>
+            <p style="color: #888;">Kategori: {{ product.category }}</p>
+            <p>Fiyat: <strong>{{ product.price }} TL</strong></p>
             <p>Stok: <strong>{{ product.stock }}</strong></p>
             
             {% if product.stock > 0 %}

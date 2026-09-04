@@ -6,21 +6,53 @@
     <style>
         body { font-family: Arial, sans-serif; background: #121212; color: #fff; text-align: center; }
         ul { list-style: none; padding: 0; }
-        li { background: #1f1f1f; margin: 10px auto; padding: 10px; width: 300px; border-radius: 5px; }
+        li { background: #1f1f1f; margin: 10px auto; padding: 10px; width: 350px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between; }
+        li img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
         .btn { display: inline-block; padding: 10px 20px; background: #00ff66; color: #000; text-decoration: none; font-weight: bold; border-radius: 5px; margin-top: 20px; }
+        .coupon-box { margin: 20px 0; }
+        input { padding: 8px; }
+        button { padding: 8px 15px; background: #00ff66; border: none; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <h1>🛒 Sepetiniz</h1>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p style="color: {% if category == 'success' %}#00ff66{% else %}red{% endif %};">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     {% if cart %}
         <ul>
             {% for item in cart %}
-                <li>{{ item.name }} - {{ item.price }} TL</li>
+                <li>
+                    <img src="{{ item.image_url or 'https://via.placeholder.com/50' }}">
+                    <span>{{ item.name }}</span>
+                    <strong>{{ item.price }} TL</strong>
+                </li>
             {% endfor %}
         </ul>
-        <h3>Toplam Tutar: {{ total_price }} TL</h3>
+
+        <div class="coupon-box">
+            <form action="/apply_coupon" method="POST">
+                <input type="text" name="code" placeholder="İndirim Kodu" required>
+                <button type="submit">Kuponu Uygula</button>
+            </form>
+        </div>
+
+        {% if discount > 0 %}
+            <p style="color: #00ff66;">Uygulanan İndirim: %{{ discount }}</p>
+            <h3>Ara Toplam: {{ subtotal }} TL</h3>
+            <h2>İndirimli Toplam Tutar: {{ total_price }} TL</h2>
+        {% else %}
+            <h3>Toplam Tutar: {{ total_price }} TL</h3>
+        {% endif %}
+
+        <br>
         <a href="/clear_cart" style="color: #ff4444;">Sepeti Temizle</a>
     {% else %}
         <p>Sepetiniz henüz boş.</p>
