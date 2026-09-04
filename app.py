@@ -1,6 +1,7 @@
 import os
 import io
 import smtplib
+import tempfile
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
@@ -12,14 +13,15 @@ from reportlab.pdfgen import canvas
 app = Flask(__name__)
 app.secret_key = 'matrixstore_gizli_anahtar'
 
-# Veritabanı adını v3 yaparak temiz ve eksiksiz tablolarla başlatıyoruz
-db_path = os.path.join('/tmp', 'store_v3.db')
+# Sistem geçici dizininde izin sorunu yaşamayan temiz veritabanı yolu
+db_dir = tempfile.gettempdir()
+db_path = os.path.join(db_dir, 'matrix_store_final.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Favoriler İlişki Tablosu
+# Favoriler İlişki Tablosu (Many-to-Many)
 favorites = db.Table('favorites',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True)
@@ -34,7 +36,7 @@ class User(db.Model):
     fav_products = db.relationship('Product', secondary=favorites, backref=db.backref('favorited_by', lazy='dynamic'))
 
 class Product(db.Model):
-    id = db.Column(db.Integer, primary_primary_key=True) if False else db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
     stock = db.Column(db.Integer, nullable=False)
