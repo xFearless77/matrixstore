@@ -5,11 +5,11 @@
     <title>Yönetim Paneli - MatrixStore</title>
     <style>
         body { font-family: Arial, sans-serif; background: #121212; color: #fff; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #333; padding: 10px; text-align: left; }
         th { background: #1f1f1f; color: #00ff66; }
         .card { background: #1f1f1f; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
-        input { padding: 6px; margin-right: 5px; }
+        input, select { padding: 6px; margin-right: 5px; }
         .btn { padding: 6px 12px; background: #00ff66; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 4px; }
     </style>
 </head>
@@ -19,12 +19,45 @@
 
     <br><br>
     <div class="card">
+        <h3>📦 Gelen Siparişler & Takip</h3>
+        <table>
+            <tr>
+                <th>Sipariş ID</th>
+                <th>Müşteri / Tel</th>
+                <th>Ürünler</th>
+                <th>Adres</th>
+                <th>Toplam</th>
+                <th>Durum Güncelle</th>
+            </tr>
+            {% for order in orders %}
+            <tr>
+                <td>#{{ order.id }}</td>
+                <td>{{ order.full_name }}<br><small>{{ order.phone }}</small></td>
+                <td>{{ order.items_summary }}</td>
+                <td>{{ order.address }}</td>
+                <td>{{ order.total_price }} TL</td>
+                <td>
+                    <form action="/admin/update_order/{{ order.id }}" method="POST">
+                        <select name="status">
+                            <option value="Hazırlanıyor" {% if order.status == 'Hazırlanıyor' %}selected{% endif %}>Hazırlanıyor</option>
+                            <option value="Kargoya Verildi" {% if order.status == 'Kargoya Verildi' %}selected{% endif %}>Kargoya Verildi</option>
+                            <option value="Teslim Edildi" {% if order.status == 'Teslim Edildi' %}selected{% endif %}>Teslim Edildi</option>
+                        </select>
+                        <button type="submit" class="btn">Güncelle</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="card">
         <h3>➕ Yeni Ürün Ekle</h3>
         <form action="/admin/add_product" method="POST">
             <input type="text" name="name" placeholder="Ürün Adı" required>
             <input type="number" step="0.01" name="price" placeholder="Fiyat (TL)" required>
             <input type="number" name="stock" placeholder="Stok Adedi" required>
-            <input type="text" name="category" placeholder="Kategori (Örn: Giyim)" required>
+            <input type="text" name="category" placeholder="Kategori" required>
             <input type="text" name="image_url" placeholder="Resim URL'si">
             <button type="submit" class="btn">Ürünü Ekle</button>
         </form>
@@ -33,21 +66,14 @@
     <div class="card">
         <h3>🎟️ İndirim Kuponu Oluştur</h3>
         <form action="/admin/add_coupon" method="POST">
-            <input type="text" name="code" placeholder="Kupon Kodu (Örn: MERT10)" required>
+            <input type="text" name="code" placeholder="Kupon Kodu" required>
             <input type="number" name="discount" placeholder="İndirim Yüzdesi (%)" required>
             <button type="submit" class="btn">Kupon Oluştur</button>
         </form>
-        <br>
-        <strong>Mevcut Kuponlar:</strong>
-        <ul>
-            {% for coupon in coupons %}
-                <li>Code: <strong>{{ coupon.code }}</strong> - İndirim: %{{ coupon.discount_percent }}</li>
-            {% endfor %}
-        </ul>
     </div>
 
     <div class="card">
-        <h3>📦 Mevcut Ürünler ve Stok Yenileme</h3>
+        <h3>📦 Stok Yenileme</h3>
         <table>
             <tr>
                 <th>ID</th>
@@ -55,7 +81,7 @@
                 <th>Ürün Adı</th>
                 <th>Fiyat</th>
                 <th>Mevcut Stok</th>
-                <th>Stok Güncelle</th>
+                <th>Güncelle</th>
             </tr>
             {% for product in products %}
             <tr>

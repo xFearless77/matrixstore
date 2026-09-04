@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Siparişi Tamamla - MatrixStore</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; text-align: center; margin-top: 50px; }
+        .card { background: #1f1f1f; display: inline-block; padding: 30px; border-radius: 8px; border: 1px solid #00ff66; width: 350px; text-align: left; }
+        input, textarea { display: block; margin: 10px 0; padding: 10px; width: 93%; }
+        button { padding: 12px; background: #00ff66; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 4px; width: 100%; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>📦 Teslimat Bilgileri</h2>
+        <p>Ödenecek Tutar: <strong>{{ total_price }} TL</strong></p>
+        <form action="/checkout" method="POST">
+            <label>Ad Soyad:</label>
+            <input type="text" name="full_name" required>
+            
+            <label>Telefon:</label>
+            <input type="tel" name="phone" required>
+            
+            <label>Adres:</label>
+            <textarea name="address" rows="4" required></textarea>
+            
+            <button type="submit">Siparişi Onayla & Bitir</button>
+        </form>
+    </div>
+</body>
+</html>

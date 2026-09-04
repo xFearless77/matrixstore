@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Siparişlerim - MatrixStore</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #fff; padding: 30px; }
+        .order-card { background: #1f1f1f; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .status { color: #00ff66; font-weight: bold; }
+        .btn { display: inline-block; padding: 8px 15px; background: #00ff66; color: #000; text-decoration: none; font-weight: bold; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>📋 Sipariş Geçmişim</h1>
+    <a href="/" class="btn">Mağazaya Dön</a>
+    <br><br>
+
+    {% if orders %}
+        {% for order in orders %}
+            <div class="order-card">
+                <h3>Sipariş #{{ order.id }}</h3>
+                <p><strong>Ürünler:</strong> {{ order.items_summary }}</p>
+                <p><strong>Tutar:</strong> {{ order.total_price }} TL</p>
+                <p><strong>Sipariş Durumu:</strong> <span class="status">{{ order.status }}</span></p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Henüz verilmiş bir siparişiniz bulunmuyor.</p>
+    {% endif %}
+</body>
+</html>

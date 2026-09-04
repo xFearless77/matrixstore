@@ -6,7 +6,7 @@
     <style>
         body { font-family: Arial, sans-serif; background: #121212; color: #fff; margin: 0; padding: 0; }
         .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; background: #1f1f1f; border-bottom: 1px solid #00ff66; }
-        .cart-btn { color: #00ff66; text-decoration: none; font-weight: bold; font-size: 18px; }
+        .cart-btn, .user-btn { color: #00ff66; text-decoration: none; font-weight: bold; font-size: 16px; margin-left: 15px; }
         .categories { text-align: center; margin: 20px 0; }
         .cat-btn { padding: 8px 16px; margin: 0 5px; background: #333; color: #fff; text-decoration: none; border-radius: 20px; }
         .cat-btn.active { background: #00ff66; color: #000; font-weight: bold; }
@@ -21,7 +21,17 @@
 
     <div class="header">
         <h1>MatrixStore</h1>
-        <a href="/cart" class="cart-btn">🛒 Sepetim ({{ cart_count }})</a>
+        <div>
+            {% if user_name %}
+                <span style="color: #fff;">👤 {{ user_name }}</span>
+                <a href="/my_orders" class="user-btn">Siparişlerim</a>
+                <a href="/logout" class="user-btn" style="color: #ff4444;">Çıkış</a>
+            {% else %}
+                <a href="/login" class="user-btn">Giriş Yap</a>
+                <a href="/register" class="user-btn">Kayıt Ol</a>
+            {% endif %}
+            <a href="/cart" class="cart-btn">🛒 Sepetim ({{ cart_count }})</a>
+        </div>
     </div>
 
     <div class="categories">
