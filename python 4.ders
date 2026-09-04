@@ -1,0 +1,53 @@
+Demetler
+
+*demetlerdeki karakterleri silemez,ekleyemez,değiştiremeyiz
+
+Küme(set)
+
+*sırasız veri yapısı vardır
+*Her eleman bir kere yazılır
+Kümelerde Kesişim ve Birleşim İşlemi= Kesişim:intersection ile Birleşim:union ile yapılır
+Kümelerde Fark işlemi difference ile yapılır
+in anahtar kelimesi listede/demette varlığını sorgular
+
+
+
+
+demet= ("Sari", "Kirmızı", "Mavi", "Yeşil", "Mor")
+
+print(demet)  
+
+küme= {"Sari", "Turuncu", "Kahverengi", "Pembe", "Beyaz"}
+print(küme)
+küme.add("Lacivert")  
+print(küme)
+
+küme.remove("Pembe")
+print(küme)
+
+küme.discard("gri")
+print(küme)
+
+
+küme2={"kirmizi","lime","şeffaf","turkuaz"}
+küme3={"kirmizi","aslanagzi"}
+print(küme2.intersection(küme3))
+print(küme2.union(küme3))
+
+print(küme2.difference(küme3))
+print(küme3.difference(küme2))
+
+print("kirmizi" in küme2)
+
+
+bosliste1=[]
+bosliste2=list() 
+
+bosdemet1=()
+bosdemet2=tuple()
+
+bosküme1=set()
+bosküme2={}  #Bu bir sözlüktür
+
+python=set("PYTHON")
+print(python)

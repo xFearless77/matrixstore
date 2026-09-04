@@ -1,0 +1,83 @@
+if True:
+    print("Kosul saglandi") #yazı yazılır
+if False:
+    print("Kosul saglanmadi")  #yazı yazılmaz
+
+a = 10
+b= 20
+if a == b:
+    print("a ve b eşittir")
+if a != b:
+    print("a ve b eşit değildir")
+
+x=6
+y=8
+if x==y:
+    print("x ve y eşittir")
+else:
+    print("x ve y eşit değildir")
+
+
+renk="kirmizi"
+if renk=="sari":
+    print("Renk saridir")
+elif renk=="mavi":
+    print("Renk mavidir")
+elif renk=="siyah":
+    print("Renk siyahtir")
+elif renk=="kirmizi":
+    print("Renk kirmizidir")
+else:
+    print("Renk sari, mavi veya siyah değildir")
+
+
+k=19
+m=96
+n=4
+if k>m or k>n:
+    print("k sayisi m veya n sayisindan büyüktür")
+else:
+    print("k sayisi m veya n sayisindan büyüktür değildir")
+if k==m and k>n :
+    print("kosul dogru")
+else: 
+    print("kosul yanlis")
+
+if n<k<m:
+    print("n sayisi k sayisindan küçüktür ve k sayisi m sayisindan küçüktür")
+
+
+liste1=[1,2,3,4,6,7,8,9]
+p=4 
+if p in liste1:
+    print("p sayisi listede vardır")
+else: 
+    print("p sayisi listede yoktur")
+
+isim1="Ali"
+s="i"
+if s in isim1:
+    print("isimde vardır")
+else:
+    print("isimde yoktur")
+
+if not "A" in isim1:  #varsa yok, yoksa var der
+    print("isimde vardır")
+else:
+    print("isimde yoktur")
+
+X="python"
+Y="pytho"
+Y+="n"
+print(X)
+print(Y)
+if X==Y:
+    print("Eşit")
+else:
+    print("Eşit değil")
+if X is Y:
+    print("Ayni")
+else:
+    print("Ayni değil")
+    print(id(X))
+    print(id(Y))

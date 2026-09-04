@@ -1,0 +1,79 @@
+append metodu=liste sonuna eleman ekleme
+insert medtodu=belli yere eleman ekleme
+remove metodu=belli eleman çıkarma
+extend=birden fazla eleman ekleme
+pop metodu=son elemanı silme
+reverse metodu=eleman sırasını ters çevirir
+sort ve sorted metodu= Sort;liste elemanlarını alfabetik olarak sıralar,Sorted;liste elemanları alfabetik olarak TERS sıralar
+
+min,max,in kullanımı= min;listedeki en küçük eleman,max;listedeki en büyük eleman,in;listedeki elemanı sorgulama
+sum kullanımı=listedeki sayıların toplamı
+for döngüsü=listedeki elemanları tek tek yazma
+enumerate= listedeki elemanları numaralandırma
+listeyi stringe çevirme=
+stringi listeye çevirme=
+
+
+
+
+renkler=["Siyah","Beyaz","Sari","Kirmizi"]
+print(type(renkler)) 
+print(renkler)
+
+print(len(renkler)) 
+print(renkler[1]) 
+
+print(renkler[0:4])
+print(renkler[ : :2 ])  
+
+
+
+
+renkler.append("Mavi")
+print(renkler)
+renkler.insert(2,"Yesil")
+print(renkler)
+
+renkler.remove("Sari")
+print(renkler)
+
+renkler2="turuncu,mor,pembe"
+renkler.extend(renkler2.split(","))
+print(renkler)
+
+renkler.pop() 
+print(renkler)
+silinen=renkler.pop()
+print(silinen)
+
+print(renkler)
+renkler.reverse()
+print(renkler)
+
+renkler2=["Kahverengi","Turkuaz","Fosfor","Gri"]
+print(renkler2)
+liste1=sorted(renkler2)
+print(liste1)
+print(renkler2)
+
+
+
+renkler3=["Siyah","Beyaz","Sari","Kirmizi"]
+sayilar=[1,2,3,4,5,6,7,8,9]
+print(min(renkler3))
+print(min(sayilar))
+print(max(renkler3))
+print(max(sayilar))
+print(sum(sayilar))
+
+for renk in renkler3 :
+    print(renk)
+print(list(enumerate(renkler3)))
+print(list(enumerate(renkler3, start=1)))
+print("Siyah" in renkler3)
+
+renkler4= "Siyah","Beyaz","Sari","Kirmizi"
+stringrenkler= " - ".join(renkler4)
+print(stringrenkler)
+renkler5=stringrenkler.split("-")
+print(renkler5)

@@ -1,0 +1,78 @@
+Matematiksel İşlemler 
+
+toplama +
+çıkarma - 
+çarpma *
+bölme /
+tam sayı bölmesi // 
+kuvvet alma **
+mutlak değer alma  abs
+yuvarlama  round
+
+
+Karşılaştırma Operatörleri 
+
+Eşittir ==
+Küçüktür <
+Büyüktür >
+Küçük eşittir <=
+Büyük eşittir >=
+Eşit değildir !=
+
+KODLAR
+
+sayi1= 5
+sayi2= 3.8
+print(type(sayi1))
+print(type(sayi2))
+
+sayi3=5**100
+print(sayi3)
+
+print(3+4)
+print(3*4)
+print(16/5)
+print(16//5)
+print(3**4)
+print(abs(-2))
+
+sayi4=22/7
+print(round(sayi4))
+print(round(sayi4,2))
+
+print(3+5*6)
+print((3+2)*5+2)
+
+
+print(3==2+1)
+sayi5= 7
+sayi6= 10
+print(sayi5<sayi6)
+print(sayi5>sayi6)
+print(sayi5==sayi6)
+print(sayi5!=sayi6)
+
+a=1
+b=a
+a=5
+print(a)
+print(b)
+
+sayi7="100"
+sayi8=100
+print(sayi7==sayi8)
+sayi9=int(sayi7)
+print(sayi9==sayi8)
+
+sayi10=int(2.6)
+print(sayi10)
+
+sayi11=123
+sayi12=str(sayi11)
+print(sayi12)
+print(sayi11)
+print(type(sayi12))
+
+i=3
+i*=5
+print(i)

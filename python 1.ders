@@ -1,0 +1,43 @@
+print("Merhaba dünya")
+print('Merhaba')
+print('Mert\'in hayalleri')
+print("""Merhaba
+Dünya""")
+print("Merhaba\nDünya")
+print("Merhaba\t\tDünya")
+
+mesaj="Merhaba Dünya"
+print(mesaj)
+
+mesaj1="merhaba"
+mesaj2="Dünya"
+print(mesaj1 +" "+mesaj2)
+print(mesaj1[0])
+print(mesaj2[0:3])
+print(mesaj1[::2])
+print(mesaj2[::-1])
+print(mesaj1.upper())
+print(mesaj1.lower())
+print(mesaj1.capitalize())
+
+mesaj3=mesaj1.upper()
+print(mesaj3)
+mesaj4=mesaj2.lower()
+print(mesaj4)
+mesaj5=mesaj1.capitalize()
+print(mesaj5)
+
+print(mesaj1.startswith("me"))
+print(mesaj1.endswith("ba"))
+print(len(mesaj1))
+
+print("Merhaba"*10)
+print("Merhaba "*10)
+
+isim= "Mert"
+yas="19"
+print("{},{} yaşındadır".format(isim,yas))
+mesaj="Merhaba"
+print("{} {} dedi.".format(isim,mesaj))
+
+print(f"{isim} {mesaj} dedi")

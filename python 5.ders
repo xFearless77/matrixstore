@@ -1,0 +1,27 @@
+kisi={"isim":"Mert", "yas":19, "cinsiyet":"Erkek", "sehir":"Denizli","hobiler":["kodlama","ders"]}
+print(kisi)
+print(kisi["isim"])
+
+kisi["yas"]=20
+print(kisi)
+kisi.update({"sehir":"Ispartaaa","yas":19})
+print(kisi)
+kisi["id"]=5
+print(kisi)
+del kisi["id"]
+print(kisi)
+
+kisi2={"isim":"Ali", "yas":17, "cinsiyet":"Erkek", "sehir":"Denizli","hobiler":["spor","yüzme"]}
+for x in kisi2:
+    print(x)
+for x in kisi2:
+    print(kisi2[x])
+print(kisi2.keys())
+print(kisi2.values())
+print(kisi2.items())
+for k, v in kisi2.items():
+    print(k, v)
+
+print(kisi2.get("id"))
+print(kisi2.get("id", "Böyle bir anahtar yok"))
+print(kisi2.get("isim" ))
