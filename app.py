@@ -367,7 +367,7 @@ def clear_cart():
 
 # --- ADMIN PANELİ ROTALARI ---
 ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "123"
+ADMIN_PASSWORD = "6980mertD"
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
